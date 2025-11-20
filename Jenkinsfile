@@ -27,7 +27,7 @@ pipeline {
         stage('Préparer l\'environnement Docker') {
             agent {
                 docker {
-                    image 'docker:stable-cli'
+                    image 'docker'
                     args '-v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
