@@ -1,50 +1,50 @@
-// Jenkinsfile (Corrigé - Suppression de l'étape Checkout redondante)
+// Jenkinsfile (Corrigé - Ajout de l'option skipDefaultCheckout)
 pipeline {
-    // Agent au niveau global défini à 'none'
     agent none
 
     options {
-        // AJOUTEZ CETTE OPTION
-        // Cette étape utilise l'étape Pipeline "cleanWs" pour nettoyer avant ou après l'exécution.
-        // Ici, nous faisons le nettoyage au début.
-        skipDefaultCheckout() // Optionnel, évite un checkout implicite non désiré
-        buildDiscarder(logRotator(daysToKeepStr: '30', numToKeepStr: '10')) // Exemple de conservation des logs
+        // AJOUTER CETTE LIGNE : Indique à Jenkins de ne pas faire le checkout implicite
+        skipDefaultCheckout() 
     }
 
     stages {
         
-        // Supprimez le stage('Checkout SCM') qui était redondant et causait l'erreur "not in a git directory".
-        // Le code est déjà disponible dans le workspace à partir d'ici.
+        // NOUVELLE PREMIÈRE ÉTAPE : Fait le checkout manuellement et proprement
+        stage('Checkout SCM') {
+            agent any // Utilise le nœud par défaut pour le clonage
+            steps {
+                // Fait un checkout explicite SANS conflit
+                checkout scm
+                echo "Code cloné et prêt."
+            }
+        }
         
-        // 1. Étape Docker (pour pull/inspect, etc.)
+        // 2. Étape Docker (Préparer l'environnement Docker)
         stage('Préparer l\'environnement Docker') {
             agent {
                 docker {
-                    // Utilise l'image officielle du client Docker (inclut le binaire 'docker')
                     image 'docker:stable-cli'
-                    // LIGNE CRUCIALE : Passe le socket de l'hôte à ce conteneur agent (DooD)
                     args '-v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
+            // ... (le reste de l'étape inchangé)
             steps {
                 echo "Vérification de Docker..."
-                // Ces commandes vont fonctionner car l'exécutable 'docker' et le socket sont disponibles
                 sh 'docker inspect -f . python:3.9-slim' 
                 sh 'docker pull python:3.9-slim'
             }
         }
         
-        // 2. Étape Python (pour exécuter votre script)
+        // 3. Étape Python
         stage('Exécution du Script Python') {
+            // ... (le reste de l'étape inchangé)
             agent {
                 docker {
-                    // Utilise l'image Python
                     image 'python:3.9-slim'
                     args '-u root'
                 }
             }
             steps {
-                // Toutes les commandes 'sh' s'exécutent dans l'agent python:3.9-slim
                 sh '''
                 echo "Démarrage de l\'exécution du script Python..."
                 python3 hello.py
