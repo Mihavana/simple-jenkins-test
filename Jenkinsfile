@@ -1,37 +1,24 @@
 // Jenkinsfile
 pipeline {
-    agent any // Le pipeline peut s'exécuter sur n'importe quel agent disponible (votre serveur Jenkins sur Linux)
+    // Définir l'agent du pipeline comme une image Docker (python:3.9-slim)
+    agent {
+        docker {
+            image 'python:3.9-slim' // L'image qui contient Python
+            args '-u root' // Optionnel, pour éviter les problèmes de permissions utilisateur
+        }
+    }
 
     stages {
-        stage('Checkout du Code') {
-            steps {
-                // Cette étape est souvent implicite, mais la définir est plus clair.
-                echo 'Clonage du dépôt GitHub...'
-                // L'agent Jenkins clone automatiquement le code dans son espace de travail
-            }
-        }
         stage('Exécution du Script') {
             steps {
-                // Utilisation de 'sh' pour exécuter des commandes shell Linux
+                // Maintenant, toutes les commandes 'sh' s'exécutent DANS le conteneur python:3.9-slim
                 sh '''
-                echo "Démarrage de l'environnement Linux pour le script..."
-                # La commande python3 doit être disponible sur le serveur Jenkins
+                echo "Démarrage de l'exécution du script Python directement dans l'environnement Python..."
                 python3 hello.py
                 echo "Le script a terminé."
                 '''
             }
         }
     }
-    post {
-        // Actions après la fin du pipeline, peu importe le résultat
-        always {
-            echo 'Pipeline terminé.'
-        }
-        success {
-            echo 'Notification: Le build a réussi ! 🎉'
-        }
-        failure {
-            echo 'Notification: Le build a échoué ! 😢'
-        }
-    }
+    // ... (Section post non modifiée)
 }
