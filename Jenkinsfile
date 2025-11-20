@@ -1,25 +1,29 @@
-// Jenkinsfile (Corrigé - Ajout de l'option skipDefaultCheckout)
+// Jenkinsfile (Structure la plus simple pour le SCM)
 pipeline {
     agent none
-
+    
+    // Définition de la source de code
     options {
-        // AJOUTER CETTE LIGNE : Indique à Jenkins de ne pas faire le checkout implicite
-        skipDefaultCheckout() 
+        // Empêche tout autre tentative de checkout implicite
+        skipDefaultCheckout(true) 
     }
 
     stages {
         
-        // NOUVELLE PREMIÈRE ÉTAPE : Fait le checkout manuellement et proprement
-        stage('Checkout SCM') {
-            agent any // Utilise le nœud par défaut pour le clonage
+        // NOUVEAU PREMIER STAGE : CLONAGE MANUEL
+        stage('Clonage SCM') {
+            agent any
             steps {
-                // Fait un checkout explicite SANS conflit
-                checkout scm
-                echo "Code cloné et prêt."
+                // Utilise le step 'git' avec les paramètres explicites. 
+                // Assurez-vous que l'ID d'identifiants est correct.
+                git branch: 'main', 
+                    credentialsId: 'github-ssh', 
+                    url: 'git@github.com:Mihavana/simple-jenkins-test.git'
+                echo "Code cloné et prêt dans le workspace."
             }
         }
         
-        // 2. Étape Docker (Préparer l'environnement Docker)
+        // 2. Étape Docker (Préparer l\'environnement Docker)
         stage('Préparer l\'environnement Docker') {
             agent {
                 docker {
@@ -27,7 +31,6 @@ pipeline {
                     args '-v /var/run/docker.sock:/var/run/docker.sock'
                 }
             }
-            // ... (le reste de l'étape inchangé)
             steps {
                 echo "Vérification de Docker..."
                 sh 'docker inspect -f . python:3.9-slim' 
@@ -37,7 +40,6 @@ pipeline {
         
         // 3. Étape Python
         stage('Exécution du Script Python') {
-            // ... (le reste de l'étape inchangé)
             agent {
                 docker {
                     image 'python:3.9-slim'
